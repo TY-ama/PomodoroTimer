@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00a089" />
+    <meta name="description" content="自由な時間区間を組み合わせて繰り返し実行できるポモドーロタイマー" />
+    <title>Focus Flow — ポモドーロタイマー</title>
+    <script>
+      (() => {
+        try {
+          const storedTheme = localStorage.getItem('focus-flow-theme-v1');
+          const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+          document.documentElement.dataset.theme = storedTheme || (prefersDark ? 'dark' : 'light');
+        } catch {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <!-- アイコンは既存の操作意味を保つために使用します。 -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand" aria-label="Focus Flow">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span class="brand-copy">
+            <strong>Focus Flow</strong>
+            <small>区間タイマー</small>
+          </span>
+        </div>
+        <div class="topbar-actions">
+          <span class="saved-state" id="savedState"><span class="saved-dot" aria-hidden="true"></span> ローカル保存</span>
+          <button class="theme-toggle mdc-icon-button" id="themeToggle" type="button" aria-label="ダークモードに切り替える" aria-pressed="false" title="ダークモードに切り替える">
+            <span class="mdc-icon-button__ripple"></span>
+            <span class="material-icons mdc-icon-button__icon" id="themeIcon" aria-hidden="true">dark_mode</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="timer-card panel mdc-card" aria-labelledby="timerTitle">
+          <div class="timer-stage">
+            <div class="stage-topline">
+              <span class="current-kicker" id="timerTitle">現在の区間</span>
+              <div class="stage-meta">
+                <span class="status-pill" id="statusPill">待機中</span>
+                <span class="step-counter" id="stepCounter">区間 1 / 2</span>
+              </div>
+            </div>
+            <div class="timer-orb" id="timerOrb" role="progressbar" aria-label="現在の区間の進捗" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="残り25分" style="--progress: 0deg">
+              <div class="orb-inner" aria-hidden="true">
+                <span class="time-display display" id="timeDisplayVisual">25:00</span>
+                <span class="time-caption" id="timeCaption">分 : 秒</span>
+              </div>
+            </div>
+            <span class="sr-only" id="timeDisplay" role="timer" aria-live="off" aria-label="残り25分">25:00</span>
+            <div class="interval-name" id="intervalName">区間 01</div>
+          </div>
+
+          <div class="session-stats" aria-label="セッション情報">
+            <div class="stat-block">
+              <span class="stat-label">セット</span>
+              <strong id="setCounter">1 / 4</strong>
+            </div>
+            <div class="stat-divider" aria-hidden="true"></div>
+            <div class="stat-block stat-block-wide">
+              <span class="stat-label">セッション残り</span>
+              <strong id="overallRemaining">1時間56分</strong>
+            </div>
+          </div>
+
+          <div class="timer-actions">
+            <button class="button mdc-button mdc-button--raised button-primary button-large" id="mainAction" type="button">
+              <span class="mdc-button__ripple"></span>
+              <span class="material-icons button-icon" id="mainActionIcon" aria-hidden="true">play_arrow</span>
+              <span class="mdc-button__label" id="mainActionLabel">開始する</span>
+            </button>
+            <button class="button mdc-button mdc-button--outlined button-secondary button-large" id="resetAction" type="button">
+              <span class="mdc-button__ripple"></span>
+              <span class="material-icons button-icon" aria-hidden="true">restart_alt</span>
+              <span class="mdc-button__label">区間をリセット</span>
+            </button>
+            <button class="button mdc-button mdc-button--outlined button-stop button-large" id="stopAction" type="button" disabled>
+              <span class="mdc-button__ripple"></span>
+              <span class="material-icons button-icon" aria-hidden="true">stop</span>
+              <span class="mdc-button__label">完全停止</span>
+            </button>
+          </div>
+          <p class="keyboard-hint"><kbd>Space</kbd> で開始 / 一時停止</p>
+        </section>
+
+        <aside class="settings-card panel mdc-card" aria-labelledby="settingsTitle">
+          <div class="card-heading">
+            <div>
+              <p class="eyebrow">CUSTOMIZE YOUR FLOW</p>
+              <h2 id="settingsTitle">タイマー設定</h2>
+            </div>
+            <span class="material-icons settings-symbol" aria-hidden="true">tune</span>
+          </div>
+
+          <fieldset id="settingsFieldset">
+            <div class="setting-section intervals-section">
+              <div class="section-heading">
+                <div>
+                  <span class="section-label">時間区間</span>
+                </div>
+                <span class="material-icons section-symbol" aria-hidden="true">view_timeline</span>
+              </div>
+              <ul class="interval-list mdc-list" id="intervalList" aria-label="時間区間の一覧"></ul>
+              <button class="add-interval mdc-button" id="addInterval" type="button">
+                <span class="mdc-button__ripple"></span>
+                <span class="material-icons" aria-hidden="true">add</span>
+                <span class="mdc-button__label">区間を追加</span>
+              </button>
+              <div class="quick-picker">
+                <div class="quick-picker-heading">
+                  <span>クイック設定</span><small id="selectedHint">区間 01を選択中</small>
+                </div>
+                <div class="quick-options" id="quickOptions">
+                  <button class="mdc-button mdc-button--outlined" type="button" data-minutes="5"><span class="mdc-button__ripple"></span><span class="mdc-button__label">5<span>分</span></span></button>
+                  <button class="mdc-button mdc-button--outlined" type="button" data-minutes="10"><span class="mdc-button__ripple"></span><span class="mdc-button__label">10<span>分</span></span></button>
+                  <button class="mdc-button mdc-button--outlined" type="button" data-minutes="15"><span class="mdc-button__ripple"></span><span class="mdc-button__label">15<span>分</span></span></button>
+                  <button class="mdc-button mdc-button--outlined" type="button" data-minutes="20"><span class="mdc-button__ripple"></span><span class="mdc-button__label">20<span>分</span></span></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-section repeat-section">
+              <div class="section-heading">
+                <div>
+                  <label class="section-label" for="repeatCount">繰り返しセット数</label>
+                </div>
+                <span class="material-icons section-symbol" aria-hidden="true">repeat</span>
+              </div>
+              <div class="number-control">
+                <label class="field-label" for="repeatCount">セット数</label>
+                <div class="input-with-suffix">
+                  <input class="text-input" id="repeatCount" type="number" min="1" max="99" step="1" inputmode="numeric" value="4" aria-label="繰り返しセット数" />
+                  <span class="field-suffix">セット</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-section preset-section">
+              <div class="section-label-row">
+                <span class="section-label">プリセット</span>
+                <div class="preset-meta">
+                  <span class="active-preset" id="activePreset">適用中: カスタム設定</span>
+                  <span class="section-count" id="presetCount">0件保存</span>
+                </div>
+              </div>
+              <div class="preset-load-row">
+                <select id="presetSelect" aria-label="保存済みプリセット" disabled>
+                  <option value="">保存済みプリセットはありません</option>
+                </select>
+                <button class="button mdc-button mdc-button--outlined button-small button-secondary" id="loadPreset" type="button" disabled>
+                  <span class="mdc-button__ripple"></span><span class="mdc-button__label">読み込む</span>
+                </button>
+              </div>
+              <div class="preset-save-row">
+                <label class="sr-only" for="presetName">プリセット名</label>
+                <input class="text-input preset-name-field" id="presetName" type="text" maxlength="32" autocomplete="off" aria-label="プリセット名" placeholder="プリセット名を入力" />
+                <button class="button mdc-button mdc-button--outlined button-small button-secondary" id="savePreset" type="button">
+                  <span class="mdc-button__ripple"></span><span class="mdc-button__label">保存</span>
+                </button>
+              </div>
+              <p class="inline-feedback" id="presetFeedback" aria-live="polite"></p>
+            </div>
+          </fieldset>
+
+          <div class="setting-section sound-section">
+            <div class="section-label-row">
+              <label class="section-label" for="volumeControl">通知音</label>
+              <output id="volumeValue" for="volumeControl">65%</output>
+            </div>
+            <div class="volume-row">
+              <span class="material-icons volume-icon" aria-hidden="true">volume_mute</span>
+              <div class="mdc-slider volume-slider" id="volumeSlider">
+                <input class="mdc-slider__input" id="volumeControl" type="range" min="0" max="100" step="1" value="65" aria-label="通知音の音量" />
+                <div class="mdc-slider__track">
+                  <div class="mdc-slider__track--inactive"></div>
+                  <div class="mdc-slider__track--active"><div class="mdc-slider__track--active_fill"></div></div>
+                </div>
+                <div class="mdc-slider__thumb">
+                  <div class="mdc-slider__thumb-knob"></div>
+                </div>
+              </div>
+              <span class="material-icons volume-icon volume-icon-high" aria-hidden="true">volume_up</span>
+            </div>
+            <button class="notification-button mdc-button mdc-button--text" id="notificationButton" type="button">
+              <span class="mdc-button__ripple"></span>
+              <span class="material-icons notification-icon" aria-hidden="true">notifications</span>
+              <span class="notification-dot" id="notificationDot" aria-hidden="true"></span>
+              <span id="notificationText">ブラウザ通知を有効にする</span>
+            </button>
+          </div>
+
+          <div class="settings-footer">
+            <span class="status-message" id="statusMessage">設定は自動的に保存されます。</span>
+            <button class="text-button mdc-button mdc-button--text" id="restoreDefaults" type="button">
+              <span class="mdc-button__ripple"></span><span class="mdc-button__label">初期設定に戻す</span>
+            </button>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="app-footer">
+        <span>FOCUS FLOW <span aria-hidden="true">·</span> 自由な区間タイマー</span>
+        <span>ブラウザ内で動作 <span aria-hidden="true">·</span> 履歴は保存しません</span>
+      </footer>
+    </div>
+
+    <div class="sr-only" id="timerAnnouncement" aria-live="polite" aria-atomic="true"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true" tabindex="-1"></div>
+  </body>
+</html>
