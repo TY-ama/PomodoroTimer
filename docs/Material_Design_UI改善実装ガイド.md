@@ -17,7 +17,7 @@ Focus Flow のUIを、Material Design 3の考え方に沿った実装へ段階�
 
 ## 2. 現状の結論
 
-現在の実装は、Material Components WebのクラスとMaterial Iconsを使っています。しかし、画面の大部分は `styles.css` の独自CSSで構成されています。
+現在の実装は、Material Iconsを使っています。画面の大部分は `stylesheets/styles.css` の独自CSSで構成されています。
 
 したがって、現在の評価は次のとおりです。
 
@@ -36,15 +36,15 @@ Focus Flow のUIを、Material Design 3の考え方に沿った実装へ段階�
 
 | 優先度 | 問題 | 主な箇所 | 対応方針 |
 |---|---|---|---|
-| P0 | 操作領域が48px未満 | `styles.css:120, 206, 208, 210, 217, 234, 244` | 視覚上のアイコンサイズと操作領域を分離し、全操作対象を48px以上にする |
+| P0 | 操作領域が48px未満 | `stylesheets/styles.css:120, 206, 208, 210, 217, 234, 244` | 視覚上のアイコンサイズと操作領域を分離し、全操作対象を48px以上にする |
 | P0 | タイマーの状態が支援技術に伝わらない | `index.html:55-58`, `app.js:278-284` | timer/progressの意味、値、区間変更をARIAで表現する |
 | P0 | テーマ切替の状態が伝わらない | `index.html:41-44`, `app.js:90-93` | `aria-pressed`を追加する |
-| P1 | 独自トークンとMDCトークンが混在 | `styles.css:3-38` | Material 3の色・文字・形状・余白トークンに統一する |
-| P1 | 余白・サイズに任意値が多い | `styles.css:94-254` | 4px基準のスペーストークンへ置き換える |
+| P1 | 独自トークンとMDCトークンが混在 | `stylesheets/styles.css:3-38` | Material 3の色・文字・形状・余白トークンに統一する |
+| P1 | 余白・サイズに任意値が多い | `stylesheets/styles.css:94-254` | 4px基準のスペーストークンへ置き換える |
 | P1 | 独自コンポーネントがMaterialコンポーネント外 | `index.html:146-199`, `index.html:224` | Select、Snackbar、Progressの扱いを統一する |
 | P1 | Material 2系MDCとMaterial 3表現が混在 | `index.html:24, 27` | まず依存バージョンを固定し、別作業でMaterial Webへの移行を検討する |
-| P2 | タイポグラフィが個別指定中心 | `styles.css:139-163`, `styles.css:179-193` | M3のタイプスケールに割り当てる |
-| P2 | 影・角丸が独自値 | `styles.css:133-159`, `styles.css:255` | 標高・形状トークンに整理する |
+| P2 | タイポグラフィが個別指定中心 | `stylesheets/styles.css:139-163`, `stylesheets/styles.css:179-193` | M3のタイプスケールに割り当てる |
+| P2 | 影・角丸が独自値 | `stylesheets/styles.css:133-159`, `stylesheets/styles.css:255` | 標高・形状トークンに整理する |
 
 ## 3. 実装方針
 
@@ -72,7 +72,7 @@ Focus Flow のUIを、Material Design 3の考え方に沿った実装へ段階�
 
 ### Step 1：デザイントークンを定義する
 
-`styles.css`の先頭にある個別値を、次のような役割別トークンへ整理します。色の具体値はMaterial Theme BuilderまたはMaterial Color Utilitiesで生成し、ライト／ダークの両方でコントラストを確認します。
+`stylesheets/styles.css`の先頭にある個別値を、次のような役割別トークンへ整理します。色の具体値はMaterial Theme BuilderまたはMaterial Color Utilitiesで生成し、ライト／ダークの両方でコントラストを確認します。
 
 ```css
 :root {
@@ -214,7 +214,7 @@ elements.themeToggle.setAttribute('aria-pressed', String(isDark));
 
 #### Toast
 
-対象：`index.html:224`、`styles.css:255-256`
+対象：`index.html:224`、`stylesheets/styles.css:255-256`
 
 - Material Snackbarへ置き換える
 - 独自Toastを残す場合は、`role="status"`、`aria-live="polite"`、十分なコントラスト、キーボードで内容を確認できることを検証する
@@ -361,13 +361,13 @@ elements.themeToggle.setAttribute('aria-pressed', String(isDark));
 
 ```powershell
 # 独自の小さい操作領域が残っていないか確認
-rg -n "width: (29|31|40)px|height: (29|31|40)px|min-height: (34|39|41|42|45)px" styles.css
+rg -n "width: (29|31|40)px|height: (29|31|40)px|min-height: (34|39|41|42|45)px" stylesheets/styles.css
 
 # M3トークンの利用状況を確認
-rg -n "md-sys-color|md-sys-typescale|md-sys-shape|mdc-theme" index.html styles.css app.js
+rg -n "md-sys-color|md-sys-typescale|md-sys-shape|mdc-theme" index.html stylesheets/styles.css app.js
 
 # 状態・アクセシビリティ属性を確認
-rg -n "aria-label|aria-pressed|aria-live|role=|aria-value|focus-visible" index.html styles.css app.js
+rg -n "aria-label|aria-pressed|aria-live|role=|aria-value|focus-visible" index.html stylesheets/styles.css app.js
 
 # Material依存のバージョンが固定されているか確認
 rg -n "material-components-web|@material/web|@latest" index.html README.md

@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap');
 
-/* DESIGN.md is the source of truth for the visual system. */
+/* docs/DESIGN.md is the source of truth for the visual system. */
 :root {
   color-scheme: light;
 
@@ -51,7 +51,7 @@
   --warning-surface: #f0ebe2;
   --danger-surface: #f2e8e6;
 
-  /* Typography: DESIGN.md type roles */
+  /* Typography: docs/DESIGN.md type roles */
   --font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', system-ui, sans-serif;
   --font-h1-size: 4.7348rem;
   --font-h1-line: 1.234;
@@ -66,7 +66,7 @@
   --font-caption-size: .844rem;
   --font-caption-line: 1.547;
 
-  /* Spacing: DESIGN.md 4px base unit */
+  /* Spacing: docs/DESIGN.md 4px base unit */
   --space-2xs: 2px;
   --space-xs: 4px;
   --space-sm: 8px;
@@ -78,7 +78,7 @@
   --space-4xl: 64px;
   --space-5xl: 96px;
 
-  /* Radius: DESIGN.md component roles */
+  /* Radius: docs/DESIGN.md component roles */
   --radius-none: 0;
   --radius-sm: 2px;
   --radius-md: 4px;
@@ -86,7 +86,7 @@
   --radius-xl: 8px;
   --radius-full: 9999px;
 
-  /* DESIGN.md intentionally specifies no elevation. */
+  /* docs/DESIGN.md intentionally specifies no elevation. */
   --shadow-sm: none;
   --shadow-md: none;
   --shadow-lg: none;
